@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KASIR PRO</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--border:#2a2a40;
+  --accent:#6c5ce7;--accent2:#a29bfe;--green:#00cec9;--red:#ff7675;
+  --yellow:#fdcb6e;--text:#e8e8f0;--text2:#8888aa;--text3:#4a4a6a;
+  --topbar-h:58px;--bottomnav-h:62px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100%;overflow:hidden}
+body{display:flex;flex-direction:column}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+.config-banner{background:linear-gradient(135deg,rgba(108,92,231,.25),rgba(0,206,201,.15));border-bottom:1px solid rgba(108,92,231,.4);padding:8px 20px;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--accent2);flex-shrink:0}
+.config-banner.hidden{display:none}
+.btn-config-setup{margin-left:auto;background:var(--accent);border:none;border-radius:7px;color:white;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
+
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:var(--topbar-h);flex-shrink:0;z-index:50}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;display:flex;align-items:center;gap:8px}
+.logo-dot{width:9px;height:9px;background:var(--accent);border-radius:50%;box-shadow:0 0 10px var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.time-display{font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);background:var(--surface2);padding:5px 10px;border-radius:7px;border:1px solid var(--border)}
+.cashier-badge{display:flex;align-items:center;gap:7px;background:var(--surface2);padding:5px 10px;border-radius:7px;border:1px solid var(--border);font-size:13px}
+.avatar{width:26px;height:26px;background:linear-gradient(135deg,var(--accent),var(--green));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white}
+.mobile-cart-btn{display:none;position:relative;background:var(--surface2);border:1px solid var(--border);border-radius:9px;width:38px;height:38px;align-items:center;justify-content:center;cursor:pointer;font-size:18px}
+.mobile-cart-badge{position:absolute;top:-4px;right:-4px;background:var(--accent);color:white;font-size:10px;font-weight:700;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg)}
+
+.main{display:grid;grid-template-columns:220px 1fr 320px;flex:1;overflow:hidden;min-height:0}
+
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-top{padding:14px;border-bottom:1px solid var(--border)}
+.sidebar-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:8px 11px;transition:border-color .2s}
+.search-box:focus-within{border-color:var(--accent)}
+.search-box svg{color:var(--text3);flex-shrink:0}
+.search-box input{background:none;border:none;outline:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;width:100%}
+.search-box input::placeholder{color:var(--text3)}
+.cats-list{padding:10px;display:flex;flex-direction:column;gap:3px}
+.cat-item{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:9px;cursor:pointer;transition:all .15s;border:1px solid transparent}
+.cat-item:hover{background:var(--surface2)}
+.cat-item.active{background:rgba(108,92,231,.15);border-color:rgba(108,92,231,.3)}
+.cat-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.cat-info{flex:1}
+.cat-name{font-size:13px;font-weight:500;margin-bottom:1px}
+.cat-count{font-size:11px;color:var(--text3)}
+.cat-item.active .cat-name{color:var(--accent2)}
+.sidebar-bottom{margin-top:auto}
+.btn-add-product{width:100%;background:linear-gradient(135deg,var(--accent),#5a4fcf);border:none;border-radius:10px;color:white;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;padding:11px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px}
+.btn-add-product:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(108,92,231,.4)}
+.stats-bar{padding:10px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:9px 11px}
+.stat-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}
+.stat-value{font-family:'DM Mono',monospace;font-size:13px;font-weight:500}
+.stat-value.green{color:var(--green)}
+
+.products-area{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.products-toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px}
+.products-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;white-space:nowrap}
+.toolbar-right{display:flex;align-items:center;gap:8px}
+.view-toggle{display:flex;gap:3px;background:var(--surface);padding:3px;border-radius:7px;border:1px solid var(--border)}
+.view-btn{width:28px;height:28px;border:none;background:transparent;color:var(--text3);border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.view-btn.active{background:var(--surface2);color:var(--text)}
+.btn-toolbar-add{background:var(--accent);border:none;border-radius:8px;color:white;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px}
+.btn-toolbar-add:hover{opacity:.85}
+.products-grid{flex:1;overflow-y:auto;padding:14px 18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;align-content:start}
+
+.product-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:all .2s;position:relative;user-select:none}
+.product-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 28px rgba(108,92,231,.2)}
+.product-card:active{transform:scale(.97)}
+.product-card.out-of-stock{opacity:.4;pointer-events:none}
+.product-img{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:var(--surface2);border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+.product-img img{width:100%;height:100%;object-fit:cover;display:block}
+.product-img .emoji-fallback{font-size:40px}
+.product-info{padding:10px}
+.product-name{font-size:12px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.product-price{font-family:'DM Mono',monospace;font-size:12px;color:var(--accent2)}
+.product-stock{font-size:10px;color:var(--text3);margin-top:2px}
+.product-add-btn{position:absolute;bottom:8px;right:8px;width:26px;height:26px;background:var(--accent);border:none;border-radius:8px;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;opacity:0;transition:all .15s;pointer-events:none}
+.product-edit-btn{position:absolute;top:8px;left:8px;width:26px;height:26px;background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;opacity:0;transition:all .15s;z-index:2;pointer-events:none}
+.product-del-btn{position:absolute;top:8px;right:8px;width:26px;height:26px;background:rgba(255,118,117,.15);border:1px solid rgba(255,118,117,.35);border-radius:8px;color:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;opacity:0;transition:all .15s;z-index:2;pointer-events:none}
+.product-del-btn:hover{background:var(--red);color:white;border-color:var(--red)}
+.product-card:hover .product-add-btn,
+.product-card:hover .product-edit-btn,
+.product-card:hover .product-del-btn{opacity:1;pointer-events:all}
+
+.empty-state{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:60px 20px;text-align:center;color:var(--text3)}
+.empty-state-icon{font-size:52px;opacity:.25}
+.empty-state h3{font-family:'Syne',sans-serif;font-size:16px;color:var(--text2)}
+.empty-state p{font-size:13px}
+.btn-empty-add{background:var(--accent);border:none;border-radius:10px;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:7px;margin-top:4px}
+
+.cart-panel{background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.cart-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.cart-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.cart-count{background:var(--accent);color:white;font-size:10px;font-weight:700;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.btn-clear{background:none;border:1px solid var(--border);color:var(--text2);font-size:11px;padding:5px 9px;border-radius:7px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.btn-clear:hover{border-color:var(--red);color:var(--red)}
+.customer-select{padding:10px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+.section-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.customer-input{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 11px;cursor:pointer;transition:border-color .2s}
+.customer-input:hover{border-color:var(--accent)}
+.customer-input span{flex:1;font-size:12px;color:var(--text2)}
+.cart-items{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:7px}
+.cart-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--text3)}
+.cart-empty-icon{font-size:44px;opacity:.25}
+.cart-empty p{font-size:12px}
+.cart-item{background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:9px 11px;display:flex;gap:9px;align-items:center;animation:slideIn .2s ease}
+@keyframes slideIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}
+.cart-item-thumb{width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:18px}
+.cart-item-thumb img{width:100%;height:100%;object-fit:cover}
+.cart-item-info{flex:1;min-width:0}
+.cart-item-name{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.cart-item-price{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent2)}
+.cart-item-controls{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.qty-btn{width:26px;height:26px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;transition:all .15s;touch-action:manipulation}
+.qty-btn:hover{border-color:var(--accent);color:var(--accent2)}
+.qty-btn.minus:hover{border-color:var(--red);color:var(--red)}
+.qty-display{font-family:'DM Mono',monospace;font-size:13px;min-width:18px;text-align:center}
+.cart-summary{padding:12px 18px 8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:7px;flex-shrink:0}
+.summary-row{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.summary-label{color:var(--text2)}
+.summary-value{font-family:'DM Mono',monospace;font-size:12px}
+.divider{height:1px;background:var(--border);margin:2px 0}
+.summary-total{font-size:14px;font-weight:700}
+.summary-total .summary-value{font-size:16px;color:var(--green)}
+.discount-row{display:flex;gap:6px}
+.discount-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:6px 9px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color .2s}
+.discount-input:focus{border-color:var(--accent)}
+.discount-input::placeholder{color:var(--text3)}
+.btn-apply{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:7px;font-size:11px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.btn-apply:hover{border-color:var(--accent);color:var(--accent2)}
+.payment-section{padding:0 18px 14px;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+.payment-methods{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.pay-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 5px;cursor:pointer;text-align:center;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px;touch-action:manipulation}
+.pay-btn:hover{border-color:var(--accent2)}
+.pay-btn.selected{background:rgba(108,92,231,.15);border-color:var(--accent)}
+.pay-btn-icon{font-size:16px}
+.pay-btn-label{font-size:9px;color:var(--text2);font-weight:500}
+.pay-btn.selected .pay-btn-label{color:var(--accent2)}
+.cash-section{display:flex;flex-direction:column;gap:8px}
+.cash-input-row{display:flex;gap:6px;align-items:center}
+.cash-prefix{font-family:'DM Mono',monospace;font-size:13px;color:var(--text3);font-weight:600}
+.cash-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:15px;font-weight:600;outline:none;transition:border-color .2s}
+.cash-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(0,206,201,.1)}
+.quick-cash{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.quick-cash-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 6px;font-size:11px;color:var(--text2);cursor:pointer;font-family:'DM Mono',monospace;transition:all .15s;touch-action:manipulation;text-align:center;font-weight:500}
+.quick-cash-btn:hover,.quick-cash-btn:active{border-color:var(--green);color:var(--green);background:rgba(0,206,201,.08)}
+.kembalian-row{display:flex;justify-content:space-between;align-items:center;background:rgba(0,206,201,.08);border:1px solid rgba(0,206,201,.25);border-radius:8px;padding:8px 11px}
+.kembalian-label{font-size:11px;color:var(--green)}
+.kembalian-value{font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--green)}
+.btn-checkout{background:linear-gradient(135deg,var(--accent),#5a4fcf);border:none;border-radius:11px;color:white;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding:13px;cursor:pointer;width:100%;transition:all .2s;touch-action:manipulation}
+.btn-checkout:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(108,92,231,.4)}
+.btn-checkout:active{transform:scale(.98)}
+.btn-checkout:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;pointer-events:none;transition:opacity .3s;padding:16px}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:480px;transform:scale(.92);transition:transform .3s;max-height:92vh;overflow-y:auto}
+.modal-overlay.show .modal{transform:scale(1)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.modal-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:800}
+.modal-close{background:none;border:1px solid var(--border);border-radius:8px;color:var(--text2);width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .15s;flex-shrink:0}
+.modal-close:hover{border-color:var(--red);color:var(--red)}
+
+.form-group{margin-bottom:14px}
+.form-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:block}
+.form-input,.form-select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px 13px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s}
+.form-input:focus,.form-select:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--text3)}
+.form-select{cursor:pointer;appearance:none}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.img-upload-wrap{width:100%;aspect-ratio:16/9;border:2px dashed var(--border);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .2s;background:var(--surface2);overflow:hidden;position:relative}
+.img-upload-wrap:hover{border-color:var(--accent);background:rgba(108,92,231,.06)}
+.img-upload-wrap.filled{border-style:solid;border-color:var(--border)}
+.img-upload-wrap img.preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.img-upload-wrap .img-change-overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-size:12px;color:white;opacity:0;transition:opacity .2s}
+.img-upload-wrap.filled:hover .img-change-overlay{opacity:1}
+.upload-placeholder{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--text3);pointer-events:none}
+.upload-placeholder .icon{font-size:32px}
+.upload-placeholder p{font-size:12px;font-weight:500}
+.upload-placeholder small{font-size:10px}
+#imgFileInput{display:none}
+
+/* Upload progress */
+.upload-progress{display:none;flex-direction:column;gap:6px;padding:8px 0}
+.upload-progress.show{display:flex}
+.progress-bar-wrap{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:2px;transition:width .3s;width:0%}
+.progress-label{font-size:11px;color:var(--text2)}
+
+.btn-submit{width:100%;background:linear-gradient(135deg,var(--accent),#5a4fcf);border:none;border-radius:10px;color:white;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding:13px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-submit:hover{opacity:.9}
+.btn-submit:disabled{opacity:.45;cursor:not-allowed}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.success-icon{width:68px;height:68px;background:linear-gradient(135deg,var(--green),#00b7b3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 16px;box-shadow:0 0 36px rgba(0,206,201,.4)}
+.success-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;text-align:center;margin-bottom:5px}
+.success-sub{text-align:center;font-size:13px;color:var(--text2);margin-bottom:18px}
+.receipt-box{background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:14px;font-family:'DM Mono',monospace;font-size:11px;margin-bottom:16px}
+.receipt-line{display:flex;justify-content:space-between;padding:3px 0;color:var(--text2)}
+.receipt-line.total{color:var(--text);font-weight:700;font-size:12px;border-top:1px dashed var(--border);margin-top:7px;padding-top:9px}
+.modal-btns{display:flex;gap:9px}
+.btn-print{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;transition:all .15s}
+.btn-print:hover{border-color:var(--accent2)}
+.btn-undo-trx{flex:1;background:rgba(253,203,110,.08);border:1px solid rgba(253,203,110,.3);border-radius:10px;color:var(--yellow);padding:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;transition:all .15s}
+.btn-undo-trx:hover{background:rgba(253,203,110,.15);border-color:var(--yellow)}
+.btn-new-trx{flex:2;background:linear-gradient(135deg,var(--green),#00b7b3);border:none;border-radius:10px;color:white;padding:12px;cursor:pointer;font-family:'Syne',sans-serif;font-size:13px;font-weight:700}
+
+.config-note{background:rgba(108,92,231,.1);border:1px solid rgba(108,92,231,.3);border-radius:9px;padding:13px;font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:16px}
+.config-note ol{margin-left:16px}
+.config-note code{color:var(--accent2);font-family:'DM Mono',monospace;font-size:11px}
+.config-form .form-input{font-family:'DM Mono',monospace;font-size:12px}
+
+/* Policy helper box */
+.policy-box{background:rgba(253,203,110,.07);border:1px solid rgba(253,203,110,.25);border-radius:9px;padding:12px;font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:14px}
+.policy-box code{color:var(--yellow);font-family:'DM Mono',monospace;font-size:10px;display:block;margin-top:4px;background:rgba(0,0,0,.3);padding:6px 8px;border-radius:5px;white-space:pre-wrap;word-break:break-all}
+
+.bottom-nav{display:none;background:var(--surface);border-top:1px solid var(--border);height:var(--bottomnav-h);flex-shrink:0;z-index:50}
+.bottom-nav-inner{display:flex;height:100%}
+.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--text3);cursor:pointer;transition:color .15s;position:relative;touch-action:manipulation}
+.bnav-btn.active{color:var(--accent2)}
+.bnav-btn-icon{font-size:20px}
+.bnav-btn-label{font-size:10px;font-weight:500}
+.bnav-badge{position:absolute;top:6px;right:calc(50% - 16px);background:var(--accent);color:white;font-size:9px;font-weight:700;min-width:16px;height:16px;padding:0 4px;border-radius:8px;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface)}
+
+.cat-chips{display:none;overflow-x:auto;padding:10px 14px;gap:8px;flex-shrink:0;border-bottom:1px solid var(--border);scrollbar-width:none}
+.cat-chips::-webkit-scrollbar{display:none}
+.cat-chip{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 13px;white-space:nowrap;cursor:pointer;transition:all .15s;font-size:12px;font-weight:500;color:var(--text2);flex-shrink:0;touch-action:manipulation}
+.cat-chip.active{background:rgba(108,92,231,.2);border-color:var(--accent);color:var(--accent2)}
+
+.cart-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:80;backdrop-filter:blur(4px)}
+.cart-overlay.show{display:block}
+.cart-panel-mobile{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);border-radius:20px 20px 0 0;z-index:90;display:flex;flex-direction:column;max-height:92vh;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.cart-panel-mobile.show{transform:translateY(0)}
+.drag-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 6px;flex-shrink:0}
+
+.notif{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 18px;font-size:12px;color:var(--text);z-index:200;transition:all .3s;display:flex;align-items:center;gap:7px;white-space:nowrap;box-shadow:0 4px 24px rgba(0,0,0,.4);opacity:0;pointer-events:none}
+.notif.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.notif-dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.notif.err .notif-dot{background:var(--red)}
+.notif.warn .notif-dot{background:var(--yellow)}
+
+@media(max-width:900px){.main{grid-template-columns:180px 1fr 280px}}
+@media(max-width:640px){
+  :root{--topbar-h:52px}
+  body{overflow:hidden}
+  .topbar{padding:0 14px}
+  .time-display{display:none}
+  .cashier-badge span{display:none}
+  .cashier-badge{padding:5px 8px}
+  .mobile-cart-btn{display:flex}
+  .main{display:block;flex:1;overflow:hidden;position:relative}
+  .sidebar,.cart-panel{display:none}
+  .products-area{position:absolute;inset:0;display:flex;flex-direction:column}
+  .cat-chips{display:flex}
+  .products-toolbar{padding:8px 14px}
+  .products-title{font-size:14px}
+  .view-toggle{display:none}
+  .btn-toolbar-add{font-size:11px;padding:5px 10px}
+  .products-grid{padding:10px 14px 80px;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:9px}
+  .bottom-nav{display:block}
+  .notif{bottom:calc(var(--bottomnav-h)+10px)}
+  .form-row{grid-template-columns:1fr}
+}
+@media(max-width:380px){.products-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* ── TRANSACTIONS PAGE ── */
+.trx-page{display:none;flex:1;flex-direction:column;overflow:hidden;background:var(--bg)}
+.trx-page.show{display:flex}
+.trx-toolbar{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.trx-toolbar-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;flex:1}
+.trx-filter-group{display:flex;gap:6px;align-items:center}
+.trx-filter-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
+.trx-filter-btn:hover,.trx-filter-btn.active{border-color:var(--accent);color:var(--accent2);background:rgba(108,92,231,.12)}
+.trx-date-input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);padding:6px 10px;font-size:11px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer}
+.trx-date-input:focus{border-color:var(--accent)}
+.btn-reload-trx{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;transition:all .15s;flex-shrink:0}
+.btn-reload-trx:hover{border-color:var(--green);color:var(--green)}
+.trx-summary-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.trx-sum-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px}
+.trx-sum-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.trx-sum-value{font-family:'DM Mono',monospace;font-size:14px;font-weight:600}
+.trx-sum-value.green{color:var(--green)}
+.trx-sum-value.accent{color:var(--accent2)}
+.trx-list{flex:1;overflow-y:auto;padding:12px 20px;display:flex;flex-direction:column;gap:8px}
+.trx-loading{display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:12px;color:var(--text3)}
+.trx-loading-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+.trx-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:10px;color:var(--text3)}
+.trx-empty-icon{font-size:48px;opacity:.2}
+.trx-card{background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:hidden;transition:border-color .15s;cursor:pointer}
+.trx-card:hover{border-color:var(--accent)}
+.trx-card-header{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;gap:10px}
+.trx-card-left{display:flex;align-items:center;gap:10px}
+.trx-badge{background:rgba(108,92,231,.15);border:1px solid rgba(108,92,231,.3);border-radius:7px;padding:4px 9px;font-family:'DM Mono',monospace;font-size:11px;color:var(--accent2);font-weight:600;white-space:nowrap}
+.trx-card-meta{display:flex;flex-direction:column;gap:2px}
+.trx-card-time{font-size:11px;color:var(--text3)}
+.trx-card-method{font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px}
+.trx-card-right{text-align:right;flex-shrink:0}
+.trx-card-total{font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--green)}
+.trx-card-items-count{font-size:10px;color:var(--text3);margin-top:1px}
+.trx-card-items{padding:0 14px 11px;display:flex;flex-direction:column;gap:4px;border-top:1px dashed var(--border);padding-top:9px;display:none}
+.trx-card.expanded .trx-card-items{display:flex}
+.trx-item-row{display:flex;justify-content:space-between;font-size:11px;color:var(--text2)}
+.trx-item-row span:last-child{font-family:'DM Mono',monospace;color:var(--text)}
+.trx-disc-row{display:flex;justify-content:space-between;font-size:11px;color:var(--red);padding-top:4px;border-top:1px solid var(--border);margin-top:2px}
+.trx-total-row{display:flex;justify-content:space-between;font-size:12px;font-weight:700;padding-top:5px;border-top:1px dashed var(--border);margin-top:3px}
+.trx-total-row span:last-child{font-family:'DM Mono',monospace;color:var(--green)}
+.pay-method-icon{font-size:14px}
+/* topbar trx button */
+.btn-trx-page{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px;transition:all .15s}
+.btn-trx-page:hover,.btn-trx-page.active{border-color:var(--accent);color:var(--accent2)}
+@media(max-width:640px){
+  .trx-summary-bar{grid-template-columns:repeat(2,1fr);padding:10px 14px}
+  .trx-toolbar{padding:10px 14px}
+  .trx-list{padding:10px 14px 80px}
+}
+
+.trx-card-header{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;gap:10px;position:relative}
+.btn-del-trx{background:rgba(255,118,117,.12);border:1px solid rgba(255,118,117,.3);border-radius:7px;color:var(--red);width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;flex-shrink:0;transition:all .15s;opacity:0}
+.trx-card:hover .btn-del-trx{opacity:1}
+.btn-del-trx:hover{background:var(--red);color:white;border-color:var(--red)}
+</style>
+</head>
+<body>
+
+
+
+<div class="topbar">
+  <div class="logo"><div class="logo-dot"></div>KASIR<span style="color:var(--accent2)">FREE</span></div>
+  <div class="topbar-right">
+    <div class="time-display" id="clock">--:--:--</div>
+    <button class="btn-trx-page" id="btnShowTrx">📋 Riwayat</button>
+    <div class="cashier-badge"><div class="avatar">AA</div><span>Admin</span></div>
+    <div class="mobile-cart-btn" id="btnMobileCart">🛒<div class="mobile-cart-badge" id="mobileCartBadge" style="display:none">0</div></div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-title">Kategori</div>
+      <div class="search-box">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" placeholder="Cari produk..." id="searchD">
+      </div>
+    </div>
+    <div class="cats-list" id="catListD"></div>
+    <div class="sidebar-bottom">
+      <div style="padding:12px">
+        <button class="btn-add-product" id="btnSidebarAdd">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Tambah Produk
+        </button>
+      </div>
+      <div class="stats-bar">
+        <div class="stat-card"><div class="stat-label">Transaksi</div><div class="stat-value" id="totalTrx">0</div></div>
+        <div class="stat-card">
+          <div class="stat-label" style="display:flex;align-items:center;justify-content:space-between">Omset<button id="btnUndoStat" title="Undo transaksi terakhir" style="background:none;border:none;color:var(--yellow);cursor:pointer;font-size:13px;padding:0;display:none;line-height:1">↩</button></div>
+          <div class="stat-value green" id="totalOmset">Rp 0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="products-area">
+    <div class="cat-chips" id="catChips"></div>
+    <div class="products-toolbar">
+      <div class="products-title" id="activeCategory">🍽️ Semua Menu</div>
+      <div class="toolbar-right">
+        <span style="font-size:11px;color:var(--text3)" id="productCount">0 produk</span>
+        <div class="view-toggle">
+          <button class="view-btn active" id="btnViewGrid" title="Grid">
+            <svg width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm8 0A1.5 1.5 0 0 1 10.5 9h3A1.5 1.5 0 0 1 15 10.5v3A1.5 1.5 0 0 1 13.5 15h-3A1.5 1.5 0 0 1 9 13.5v-3z"/></svg>
+          </button>
+          <button class="view-btn" id="btnViewList" title="List">
+            <svg width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/></svg>
+          </button>
+        </div>
+        <button class="btn-toolbar-add" id="btnToolbarAdd">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Tambah
+        </button>
+      </div>
+    </div>
+    <div id="mobileSearchWrap" style="padding:0 14px 8px;display:none">
+      <div class="search-box">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" placeholder="Cari produk..." id="searchM">
+      </div>
+    </div>
+    <div class="products-grid" id="productsGrid"></div>
+  </div>
+
+  <div class="cart-panel">
+    <div class="cart-header">
+      <div class="cart-title">Keranjang <div class="cart-count" id="cartCountD">0</div></div>
+      <button class="btn-clear" id="btnClearD">Kosongkan</button>
+    </div>
+    <div class="customer-select">
+      <div class="section-label">Pelanggan</div>
+      <div class="customer-input">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Pelanggan Umum</span>
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="cart-items" id="cartItemsD"></div>
+    <div class="cart-summary" id="cartSummaryD" style="display:none">
+      <div class="summary-row"><span class="summary-label">Subtotal</span><span class="summary-value" id="subtotalD">Rp 0</span></div>
+      <div class="summary-row">
+        <span class="summary-label">Diskon</span>
+        <div class="discount-row" style="flex:1;margin-left:10px">
+          <input class="discount-input" type="number" placeholder="%" id="discD" min="0" max="100">
+          <button class="btn-apply" id="btnApplyD">Promo</button>
+        </div>
+      </div>
+      <div class="summary-row" id="discRowD" style="display:none"><span class="summary-label">- Potongan</span><span class="summary-value" id="discAmtD" style="color:var(--red)">-Rp 0</span></div>
+      <div class="divider"></div>
+      <div class="summary-row summary-total"><span class="summary-label" style="color:var(--text)">Total</span><span class="summary-value" id="totalD">Rp 0</span></div>
+    </div>
+    <div class="payment-section" id="paySectionD" style="display:none">
+      <div class="section-label">Metode Bayar</div>
+      <div class="payment-methods" id="payMethodsD">
+        <div class="pay-btn selected" data-type="cash" data-side="D"><div class="pay-btn-icon">💵</div><div class="pay-btn-label">Tunai</div></div>
+        <div class="pay-btn" data-type="debit" data-side="D"><div class="pay-btn-icon">💳</div><div class="pay-btn-label">Debit/CC</div></div>
+        <div class="pay-btn" data-type="qris" data-side="D"><div class="pay-btn-icon">📱</div><div class="pay-btn-label">QRIS</div></div>
+      </div>
+      <div class="cash-section" id="cashSecD">
+        <div class="section-label">Uang Diterima</div>
+        <div class="cash-input-row"><span class="cash-prefix">Rp</span><input class="cash-input" type="number" id="cashD" placeholder="0"></div>
+        <div class="quick-cash" id="qCashD"></div>
+        <div class="kembalian-row" id="kRowD" style="display:none"><span class="kembalian-label">💰 Kembalian</span><span class="kembalian-value" id="kValD">Rp 0</span></div>
+      </div>
+      <button class="btn-checkout" id="checkBtnD" disabled>Proses Pembayaran →</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- TRANSACTIONS PAGE -->
+<div class="trx-page" id="trxPage">
+  <div class="trx-toolbar">
+    <div class="trx-toolbar-title">📋 Riwayat Transaksi</div>
+    <div class="trx-filter-group">
+      <button class="trx-filter-btn active" data-filter="today">Hari Ini</button>
+      <button class="trx-filter-btn" data-filter="week">7 Hari</button>
+      <button class="trx-filter-btn" data-filter="month">Bulan Ini</button>
+      <button class="trx-filter-btn" data-filter="all">Semua</button>
+    </div>
+    <button class="btn-reload-trx" id="btnReloadTrx" title="Refresh">↺</button>
+    <button class="btn-trx-page" id="btnBackKasir">← Kasir</button>
+  </div>
+  <div class="trx-summary-bar" id="trxSummaryBar">
+    <div class="trx-sum-card"><div class="trx-sum-label">Total Transaksi</div><div class="trx-sum-value accent" id="trxSumCount">—</div></div>
+    <div class="trx-sum-card"><div class="trx-sum-label">Total Omset</div><div class="trx-sum-value green" id="trxSumTotal">—</div></div>
+    <div class="trx-sum-card"><div class="trx-sum-label">Rata-rata</div><div class="trx-sum-value" id="trxSumAvg">—</div></div>
+    <div class="trx-sum-card"><div class="trx-sum-label">Item Terjual</div><div class="trx-sum-value" id="trxSumItems">—</div></div>
+  </div>
+  <div class="trx-list" id="trxList">
+    <div class="trx-loading"><div class="trx-loading-spinner"></div><span>Memuat transaksi...</span></div>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="bnav-btn active" id="bnavMenu"><div class="bnav-btn-icon">🍽️</div><div class="bnav-btn-label">Menu</div></button>
+    <button class="bnav-btn" id="bnavSearch"><div class="bnav-btn-icon">🔍</div><div class="bnav-btn-label">Cari</div></button>
+    <button class="bnav-btn" id="bnavAdd"><div class="bnav-btn-icon">➕</div><div class="bnav-btn-label">Tambah</div></button>
+    <button class="bnav-btn" id="bnavCart"><div class="bnav-btn-icon">🛒</div><div class="bnav-btn-label">Keranjang</div><div class="bnav-badge" id="bnavBadge" style="display:none">0</div></button>
+    <button class="bnav-btn" id="bnavTrx"><div class="bnav-btn-icon">📋</div><div class="bnav-btn-label">Riwayat</div></button>
+  </div>
+</div>
+
+<div class="cart-overlay" id="cartOverlay"></div>
+<div class="cart-panel-mobile" id="cartPanelMobile">
+  <div class="drag-handle"></div>
+  <div class="cart-header">
+    <div class="cart-title">Keranjang <div class="cart-count" id="cartCountM">0</div></div>
+    <button class="btn-clear" id="btnClearM">Kosongkan</button>
+  </div>
+  <div class="customer-select">
+    <div class="section-label">Pelanggan</div>
+    <div class="customer-input">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Pelanggan Umum</span>
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+  </div>
+  <div class="cart-items" id="cartItemsM" style="max-height:33vh"></div>
+  <div class="cart-summary" id="cartSummaryM" style="display:none">
+    <div class="summary-row"><span class="summary-label">Subtotal</span><span class="summary-value" id="subtotalM">Rp 0</span></div>
+    <div class="summary-row">
+      <span class="summary-label">Diskon</span>
+      <div class="discount-row" style="flex:1;margin-left:10px">
+        <input class="discount-input" type="number" placeholder="%" id="discM" min="0" max="100">
+        <button class="btn-apply" id="btnApplyM">Promo</button>
+      </div>
+    </div>
+    <div class="summary-row" id="discRowM" style="display:none"><span class="summary-label">- Potongan</span><span class="summary-value" id="discAmtM" style="color:var(--red)">-Rp 0</span></div>
+    <div class="divider"></div>
+    <div class="summary-row summary-total"><span class="summary-label" style="color:var(--text)">Total</span><span class="summary-value" id="totalM">Rp 0</span></div>
+  </div>
+  <div class="payment-section" id="paySectionM" style="display:none">
+    <div class="section-label">Metode Bayar</div>
+    <div class="payment-methods" id="payMethodsM">
+      <div class="pay-btn selected" data-type="cash" data-side="M"><div class="pay-btn-icon">💵</div><div class="pay-btn-label">Tunai</div></div>
+      <div class="pay-btn" data-type="debit" data-side="M"><div class="pay-btn-icon">💳</div><div class="pay-btn-label">Debit/CC</div></div>
+      <div class="pay-btn" data-type="qris" data-side="M"><div class="pay-btn-icon">📱</div><div class="pay-btn-label">QRIS</div></div>
+    </div>
+    <div class="cash-section" id="cashSecM">
+      <div class="section-label">Uang Diterima</div>
+      <div class="cash-input-row"><span class="cash-prefix">Rp</span><input class="cash-input" type="number" id="cashM" placeholder="0"></div>
+      <div class="quick-cash" id="qCashM"></div>
+      <div class="kembalian-row" id="kRowM" style="display:none"><span class="kembalian-label">💰 Kembalian</span><span class="kembalian-value" id="kValM">Rp 0</span></div>
+    </div>
+    <button class="btn-checkout" id="checkBtnM" disabled>Proses Pembayaran →</button>
+  </div>
+</div>
+
+<!-- ADD/EDIT PRODUCT MODAL -->
+<div class="modal-overlay" id="addProductModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="addProductTitle">➕ Tambah Produk</div>
+      <button class="modal-close" id="btnCloseAdd">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Foto Produk</label>
+      <div class="img-upload-wrap" id="imgUploadWrap">
+        <div class="upload-placeholder" id="uploadPlaceholder">
+          <span class="icon">📷</span>
+          <p>Klik untuk pilih foto</p>
+          <small>JPG, PNG, WEBP — Maks 5MB</small>
+        </div>
+        <div class="img-change-overlay">
+          <span style="font-size:24px">📷</span>
+          <span>Ganti Foto</span>
+        </div>
+      </div>
+      <input type="file" id="imgFileInput" accept="image/*">
+      <div class="upload-progress" id="uploadProgress">
+        <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+        <span class="progress-label" id="progressLabel">Mengupload gambar...</span>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Nama Produk *</label>
+        <input class="form-input" type="text" id="pName" placeholder="cth: Nasi Goreng">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Kategori *</label>
+        <select class="form-select" id="pCategory">
+          <option value="makanan">🍜 Makanan</option>
+          <option value="minuman">🧃 Minuman</option>
+        </select>
+      </div>
+    </div>
+    <div style="height:12px"></div>
+    <div class="form-row">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Harga (Rp) *</label>
+        <input class="form-input" type="number" id="pPrice" placeholder="cth: 25000" min="0">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Stok *</label>
+        <input class="form-input" type="number" id="pStock" placeholder="cth: 50" min="0">
+      </div>
+    </div>
+    <div style="height:12px"></div>
+    <div class="form-group" style="margin-bottom:8px">
+      <label class="form-label">Deskripsi (opsional)</label>
+      <input class="form-input" type="text" id="pDesc" placeholder="cth: Pedas, pakai telur">
+    </div>
+    <button class="btn-submit" id="btnSubmitProduct">
+      <span id="submitBtnText">Simpan Produk</span>
+    </button>
+  </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="modal-overlay" id="successModal">
+  <div class="modal">
+    <div class="success-icon">✓</div>
+    <div class="success-title">Pembayaran Berhasil!</div>
+    <div class="success-sub" id="modalSubtitle">Transaksi selesai</div>
+    <div class="receipt-box" id="receiptLines"></div>
+    <div class="modal-btns">
+      <button class="btn-print" id="btnPrint">🖨️ Cetak</button>
+      <button class="btn-undo-trx" id="btnUndoTrx">↩ Undo</button>
+      <button class="btn-new-trx" id="btnNewTrx">Transaksi Baru →</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- DELETE CONFIRMATION MODAL -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="max-width:360px;text-align:center">
+    <div style="font-size:48px;margin-bottom:12px">🗑️</div>
+    <div class="modal-title" style="text-align:center;margin-bottom:8px">Hapus Produk?</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:6px">Produk <strong id="deleteProductName" style="color:var(--text)"></strong> akan dihapus permanen.</p>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:24px">Tindakan ini tidak bisa dibatalkan.</p>
+    <div style="display:flex;gap:10px">
+      <button class="btn-print" style="flex:1" id="btnCancelDelete">Batal</button>
+      <button id="btnConfirmDelete" style="flex:1;background:var(--red);border:none;border-radius:10px;color:white;padding:12px;cursor:pointer;font-family:'Syne',sans-serif;font-size:13px;font-weight:700">Hapus</button>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"><div class="notif-dot"></div><span id="notifText"></span></div>
+
+<script>
+(function() {
+'use strict';
+
+/* ── STATE ── */
+let sbClient = null;
+const categories = [
+  { id:'all',     name:'Semua Menu', icon:'🍽️', color:'#6c5ce7' },
+  { id:'makanan', name:'Makanan',    icon:'🍜',  color:'#e17055' },
+  { id:'minuman', name:'Minuman',    icon:'🧃',  color:'#0984e3' },
+];
+let products      = [];
+let localProducts = [];
+let cart          = [];
+let activeCategory = 'all';
+let payType = { D:'cash', M:'cash' };
+let dailyTotal = 0, dailyTrx = 0;
+
+/* ── PERSISTENT DAILY STATS — hitung dari tabel transactions ── */
+function saveDailyStats() {
+  // no-op: data sudah tersimpan di tabel transactions, tidak perlu simpan lagi
+}
+
+async function loadDailyStats() {
+  if (!sbClient) return;
+  try {
+    // Ambil semua transaksi hari ini (WIB UTC+7)
+    const now = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const todayLocal = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+    const fromUTC = new Date(todayLocal + 'T00:00:00+07:00').toISOString();
+    const toUTC   = new Date(todayLocal + 'T23:59:59+07:00').toISOString();
+
+    const { data, error } = await sbClient
+      .from('transactions')
+      .select('total')
+      .gte('created_at', fromUTC)
+      .lte('created_at', toUTC);
+
+    if (error) throw error;
+
+    dailyTrx   = data.length;
+    dailyTotal = data.reduce((a, t) => a + (t.total || 0), 0);
+  } catch(e) {
+    console.warn('loadDailyStats error:', e.message);
+  }
+  $('totalTrx').textContent   = dailyTrx;
+  $('totalOmset').textContent = fRpShort(dailyTotal);
+  if (dailyTrx > 0) $('btnUndoStat').style.display = 'block';
+}
+let trxHistory = [];
+let lastTrxId = null;
+let editId     = null;
+let imgFile    = null;
+let imgDataUrl = null;
+
+/* ── SUPABASE — hardcoded ── */
+const SB_URL = 'https://xleywdskmeexfjixgsmv.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsZXl3ZHNrbWVleGZqaXhnc212Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzUyMDQsImV4cCI6MjA4ODcxMTIwNH0.QKpzmBxgzFdQVxg3rn42VvrKUXpNbrcWVZRliMF0PrE';
+
+function initSB() {
+  try {
+    sbClient = window.supabase.createClient(SB_URL, SB_KEY);
+    console.log('✅ Supabase connected');
+    return true;
+  } catch(e) {
+    console.error('SB init error:', e);
+    return false;
+  }
+}
+function loadSBConfig() {
+  if (initSB()) {
+    return true;
+  }
+  return false;
+}
+
+/* ── PRODUCTS LOAD/SAVE ── */
+async function loadProducts() {
+  if (sbClient) {
+    try {
+      const { data, error } = await sbClient.from('products').select('*').order('created_at', { ascending:false });
+      if (error) throw error;
+      products = data || [];
+    } catch(e) {
+      console.error('Load products error:', JSON.stringify(e), e.message, e.code);
+      notify('❌ Produk: ' + (e.message || e.code || JSON.stringify(e)), true);
+      products = localProducts;
+    }
+  } else {
+    products = localProducts;
+  }
+  renderCats();
+  filterProducts();
+}
+
+/* ── FIX: Robust image upload to Supabase Storage ── */
+async function uploadImageToStorage(file) {
+  if (!sbClient || !file) return null;
+
+  const ext  = file.name.split('.').pop().toLowerCase();
+  const allowedExts = ['jpg','jpeg','png','webp','gif'];
+  if (!allowedExts.includes(ext)) {
+    notify('⚠️ Format tidak didukung. Gunakan JPG/PNG/WEBP', true);
+    return null;
+  }
+
+  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const BUCKET   = 'product-images';
+
+  // Show progress
+  const prog = $('uploadProgress');
+  const bar  = $('progressBar');
+  const lbl  = $('progressLabel');
+  prog.classList.add('show');
+  bar.style.width = '30%';
+  lbl.textContent = 'Mengupload gambar...';
+
+  try {
+    const { data: upData, error: upErr } = await sbClient.storage
+      .from(BUCKET)
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type || `image/${ext}`
+      });
+
+    if (upErr) {
+      console.error('Storage upload error:', upErr);
+      // Check common errors
+      if (upErr.message && upErr.message.includes('row-level security')) {
+        notify('❌ RLS Policy belum diset. Lihat panduan di Setup Supabase.', true);
+      } else if (upErr.message && upErr.message.includes('Bucket not found')) {
+        notify('❌ Bucket "product-images" tidak ditemukan. Cek nama bucket.', true);
+      } else {
+        notify('❌ Upload gagal: ' + upErr.message, true);
+      }
+      prog.classList.remove('show');
+      return null;
+    }
+
+    bar.style.width = '70%';
+    lbl.textContent = 'Mendapatkan URL...';
+
+    // FIX: Use correct getPublicUrl for Supabase v2
+    const { data: urlData } = sbClient.storage.from(BUCKET).getPublicUrl(fileName);
+
+    if (!urlData || !urlData.publicUrl) {
+      console.error('Could not get public URL for:', fileName);
+      notify('⚠️ Gambar terupload tapi URL tidak bisa diambil', true);
+      prog.classList.remove('show');
+      return null;
+    }
+
+    bar.style.width = '100%';
+    lbl.textContent = 'Upload selesai ✓';
+    setTimeout(() => prog.classList.remove('show'), 1200);
+
+    console.log('✅ Image uploaded:', urlData.publicUrl);
+    return urlData.publicUrl;
+
+  } catch(e) {
+    console.error('Upload exception:', e);
+    notify('❌ Upload gagal: ' + e.message, true);
+    prog.classList.remove('show');
+    return null;
+  }
+}
+
+async function saveProduct() {
+  const name  = $('pName').value.trim();
+  const cat   = $('pCategory').value;
+  const price = parseInt($('pPrice').value);
+  const stock = parseInt($('pStock').value);
+  const desc  = $('pDesc').value.trim();
+
+  if (!name)               return notify('⚠️ Nama produk wajib diisi', true);
+  if (!price || price < 0) return notify('⚠️ Harga tidak valid', true);
+  if (isNaN(stock) || stock < 0) return notify('⚠️ Stok tidak valid', true);
+
+  const btn  = $('btnSubmitProduct');
+  const span = $('submitBtnText');
+  btn.disabled = true;
+  span.innerHTML = '<div class="spinner"></div> Menyimpan...';
+
+  let image_url = null;
+
+  // --- IMAGE HANDLING ---
+  if (imgFile) {
+    if (sbClient) {
+      // Upload to Supabase Storage
+      image_url = await uploadImageToStorage(imgFile);
+      if (!image_url) {
+        // Upload failed — fallback to base64 (stored in DB directly)
+        // This is a fallback; for production, fix the storage policy
+        image_url = imgDataUrl;
+        notify('⚠️ Upload ke storage gagal, gambar disimpan lokal', true);
+      }
+    } else {
+      // No Supabase — store as base64 in local state
+      image_url = imgDataUrl;
+    }
+  } else if (editId) {
+    // Editing without new image — keep existing image_url
+    const existing = products.find(p => String(p.id) === String(editId));
+    image_url = existing ? existing.image_url : null;
+  }
+
+  const payload = { name, category:cat, price, stock, description:desc, image_url };
+  console.log('Saving product with image_url:', image_url ? image_url.substring(0,60)+'...' : 'null');
+
+  if (sbClient) {
+    try {
+      let result;
+      if (editId) {
+        result = await sbClient.from('products').update(payload).eq('id', editId);
+      } else {
+        result = await sbClient.from('products').insert([payload]);
+      }
+      if (result.error) throw result.error;
+      notify(editId ? '✅ Produk diperbarui!' : '✅ Produk ditambahkan!');
+      closeAddModal();
+      await loadProducts();
+    } catch(e) {
+      console.error('Save product error:', e);
+      notify('❌ Gagal menyimpan: ' + e.message, true);
+    }
+  } else {
+    if (editId) {
+      const idx = localProducts.findIndex(p => String(p.id) === String(editId));
+      if (idx !== -1) localProducts[idx] = { ...localProducts[idx], ...payload };
+    } else {
+      localProducts.unshift({ id: Date.now(), ...payload });
+    }
+    notify(editId ? '✅ Diperbarui (lokal)' : '✅ Ditambahkan (lokal)');
+    closeAddModal();
+    await loadProducts();
+  }
+
+  btn.disabled = false;
+  span.textContent = editId ? 'Perbarui Produk' : 'Simpan Produk';
+}
+
+/* ── CATEGORIES ── */
+function renderCats() {
+  const count = id => id === 'all' ? products.length : products.filter(p => p.category === id).length;
+  $('catListD').innerHTML = categories.map(c => `
+    <div class="cat-item ${c.id===activeCategory?'active':''}" data-cat="${c.id}">
+      <div class="cat-icon" style="background:${c.color}22">${c.icon}</div>
+      <div class="cat-info"><div class="cat-name">${c.name}</div><div class="cat-count">${count(c.id)} item</div></div>
+    </div>`).join('');
+  $('catChips').innerHTML = categories.map(c => `
+    <div class="cat-chip ${c.id===activeCategory?'active':''}" data-cat="${c.id}">${c.icon} ${c.name}</div>`).join('');
+}
+
+function setCategory(id) {
+  activeCategory = id;
+  const cat = categories.find(c => c.id === id);
+  $('activeCategory').textContent = `${cat.icon} ${cat.name}`;
+  renderCats();
+  filterProducts();
+}
+
+/* ── PRODUCTS RENDER ── */
+function filterProducts() {
+  const q = ($('searchD').value || $('searchM').value).toLowerCase().trim();
+  let list = activeCategory === 'all' ? products : products.filter(p => p.category === activeCategory);
+  if (q) list = list.filter(p => p.name.toLowerCase().includes(q));
+  renderProducts(list);
+}
+
+function getImgHtml(p) {
+  const fallbackEmoji = p.category === 'minuman' ? '🧃' : '🍜';
+  if (p.image_url) {
+    // Use timestamp cache-bust ONLY for base64 (not for Supabase URLs)
+    const src = p.image_url.startsWith('data:') ? p.image_url : p.image_url;
+    return `
+      <img src="${src}" alt="${p.name}" loading="lazy"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <span class="emoji-fallback" style="display:none">${fallbackEmoji}</span>`;
+  }
+  return `<span class="emoji-fallback">${fallbackEmoji}</span>`;
+}
+
+function renderProducts(list) {
+  $('productCount').textContent = `${list.length} produk`;
+  const g = $('productsGrid');
+  if (!list.length) {
+    g.innerHTML = `<div class="empty-state">
+      <div class="empty-state-icon">🍽️</div>
+      <h3>Belum ada produk</h3>
+      <p>Tambahkan menu makanan &amp; minuman pertamamu</p>
+      <button class="btn-empty-add" id="btnEmptyAdd">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Tambah Produk Pertama
+      </button></div>`;
+    $('btnEmptyAdd').addEventListener('click', openAddModal);
+    return;
+  }
+  g.innerHTML = list.map(p => `
+    <div class="product-card ${p.stock===0?'out-of-stock':''}" data-id="${p.id}">
+      <div class="product-img">${getImgHtml(p)}</div>
+      <div class="product-info">
+        <div class="product-name">${p.name}</div>
+        <div class="product-price">${fRp(p.price)}</div>
+        <div class="product-stock">${p.stock===0?'❌ Habis':'📦 '+p.stock+' sisa'}</div>
+      </div>
+      <button class="product-edit-btn" data-edit="${p.id}" title="Edit">✏️</button>
+      <button class="product-del-btn"  data-del="${p.id}"  title="Hapus">🗑</button>
+      <button class="product-add-btn" data-add="${p.id}" title="Tambah">+</button>
+    </div>`).join('');
+}
+
+/* ── CART ── */
+function addToCart(id) {
+  const p = products.find(x => String(x.id) === String(id));
+  if (!p) return;
+  const ex = cart.find(c => String(c.id) === String(id));
+  if (ex) ex.qty++; else cart.push({ ...p, qty:1 });
+  renderCart();
+  notify(`${p.category==='minuman'?'🧃':'🍜'} ${p.name} ditambahkan`);
+}
+function changeQty(id, d) {
+  const i = cart.findIndex(c => String(c.id) === String(id));
+  if (i < 0) return;
+  cart[i].qty += d;
+  if (cart[i].qty <= 0) cart.splice(i, 1);
+  renderCart();
+}
+function clearCart() {
+  cart = [];
+  ['discD','discM','cashD','cashM'].forEach(id => { const e=$(id); if(e) e.value=''; });
+  renderCart();
+}
+function renderCart() {
+  const cnt = cart.reduce((a,c) => a+c.qty, 0);
+  $('cartCountD').textContent = cnt;
+  $('cartCountM').textContent = cnt;
+  ['mobileCartBadge','bnavBadge'].forEach(id => {
+    const e=$(id); e.style.display=cnt>0?'flex':'none'; e.textContent=cnt||'';
+  });
+  const emptyHtml = `<div class="cart-empty"><div class="cart-empty-icon">🛒</div><p>Keranjang masih kosong</p><p style="font-size:11px;color:var(--text3)">Klik produk untuk menambahkan</p></div>`;
+  const itemsHtml = cart.map(item => {
+    const fallback = item.category==='minuman'?'🧃':'🍜';
+    const thumb = item.image_url
+      ? `<div class="cart-item-thumb"><img src="${item.image_url}" alt="" onerror="this.parentElement.innerHTML='${fallback}'"></div>`
+      : `<div class="cart-item-thumb">${fallback}</div>`;
+    return `<div class="cart-item">
+      ${thumb}
+      <div class="cart-item-info">
+        <div class="cart-item-name">${item.name}</div>
+        <div class="cart-item-price">${fRp(item.price * item.qty)}</div>
+      </div>
+      <div class="cart-item-controls">
+        <button class="qty-btn minus" data-qid="${item.id}" data-d="-1">−</button>
+        <span class="qty-display">${item.qty}</span>
+        <button class="qty-btn" data-qid="${item.id}" data-d="1">+</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  ['D','M'].forEach(s => {
+    const hasItems = cart.length > 0;
+    $('cartItems'+s).innerHTML = hasItems ? itemsHtml : emptyHtml;
+    $('cartSummary'+s).style.display = hasItems ? 'flex' : 'none';
+    $('paySection'+s).style.display  = hasItems ? 'flex' : 'none';
+  });
+  if (cart.length) { updateSummary(); genQuickCash(); }
+}
+
+/* ── SUMMARY ── */
+function getDisc() { return parseFloat($('discD').value) || parseFloat($('discM').value) || 0; }
+function getTotal() {
+  const s = cart.reduce((a,c) => a + c.price*c.qty, 0);
+  const d = Math.round(s * getDisc() / 100);
+  return s - d;
+}
+function updateSummary() {
+  const s = cart.reduce((a,c) => a + c.price*c.qty, 0);
+  const disc=getDisc(), da=Math.round(s*disc/100), tot=s-da;
+  ['D','M'].forEach(x => {
+    $('subtotal'+x).textContent = fRp(s);
+    $('total'+x).textContent    = fRp(tot);
+    $('discRow'+x).style.display = da>0 ? 'flex' : 'none';
+    if (da>0) $('discAmt'+x).textContent = '-'+fRp(da);
+  });
+  calcChange('D'); calcChange('M');
+}
+function calcChange(s) {
+  const total=getTotal(), cash=parseFloat($('cash'+s).value)||0, k=cash-total;
+  const row=$('kRow'+s);
+  if (cash>0 && k>=0) {
+    row.style.display='flex'; $('kVal'+s).textContent=fRp(k); $('checkBtn'+s).disabled=false;
+  } else {
+    row.style.display='none'; $('checkBtn'+s).disabled=true;
+  }
+}
+function genQuickCash() {
+  const t=getTotal();
+  const rounds=[...new Set([t,Math.ceil(t/10000)*10000,Math.ceil(t/50000)*50000,Math.ceil(t/100000)*100000])].slice(0,4);
+  ['D','M'].forEach(s => {
+    $('qCash'+s).innerHTML=rounds.map(v=>`<button class="quick-cash-btn" data-qcs="${s}" data-v="${v}">${fRp(v)}</button>`).join('');
+  });
+}
+
+/* ── CHECKOUT ── */
+async function processCheckout(s) {
+  const total   = getTotal(), pt = payType[s];
+  const subtotal = cart.reduce((a,c) => a + c.price*c.qty, 0);
+  const discPct  = getDisc();
+  const discAmt  = Math.round(subtotal * discPct / 100);
+  const cash     = pt === 'cash' ? parseFloat($('cash'+s).value) : total;
+  const change   = cash - total;
+  const trxNum   = dailyTrx + 1;
+  const trxCode  = 'TRX' + String(trxNum).padStart(4,'0');
+  const now      = new Date();
+
+  // Disable checkout button to prevent double submit
+  $('checkBtn'+s).disabled = true;
+  $('checkBtn'+s).textContent = 'Memproses...';
+
+  // Snapshot for undo
+  const snap = {
+    id: Date.now(), dbId: null,
+    total, subtotal, discPct, discAmt,
+    cash, change, pt,
+    cart: JSON.parse(JSON.stringify(cart)),
+    trxNum, trxCode
+  };
+
+  // Save to Supabase
+  if (sbClient) {
+    try {
+      const payload = {
+        trx_number:      trxCode,
+        total:           total,
+        subtotal:        subtotal,
+        discount_pct:    discPct,
+        discount_amt:    discAmt,
+        payment_method:  pt,
+        cash_received:   cash,
+        change_amount:   change,
+        items: cart.map(item => ({
+          id:       item.id,
+          name:     item.name,
+          category: item.category,
+          price:    item.price,
+          qty:      item.qty,
+          subtotal: item.price * item.qty
+        }))
+      };
+      const { data, error } = await sbClient.from('transactions').insert([payload]).select('id').single();
+      if (error) throw error;
+      snap.dbId = data.id;
+      console.log('✅ Transaksi tersimpan ke DB:', data.id);
+    } catch(e) {
+      console.error('Save transaction error:', e);
+      notify('⚠️ Transaksi berhasil tapi gagal simpan ke DB: ' + e.message, true);
+    }
+  }
+
+  trxHistory.push(snap); lastTrxId = snap.id;
+  if (trxHistory.length > 20) trxHistory.shift();
+  dailyTotal += total; dailyTrx++;
+  $('totalTrx').textContent  = dailyTrx;
+  $('totalOmset').textContent = fRpShort(dailyTotal);
+  $('btnUndoStat').style.display = 'block';
+  saveDailyStats();
+
+  $('receiptLines').innerHTML =
+    cart.map(item => `<div class="receipt-line"><span>${item.name} x${item.qty}</span><span>${fRp(item.price*item.qty)}</span></div>`).join('') +
+    `<div class="receipt-line total"><span>TOTAL</span><span>${fRp(total)}</span></div>
+     <div class="receipt-line"><span>Bayar (${pt.toUpperCase()})</span><span>${fRp(cash)}</span></div>
+     ${pt==='cash'?`<div class="receipt-line"><span>Kembalian</span><span style="color:var(--green)">${fRp(change)}</span></div>`:''}
+     ${discAmt>0?`<div class="receipt-line"><span>Diskon ${discPct}%</span><span style="color:var(--red)">-${fRp(discAmt)}</span></div>`:''}`;
+
+  $('modalSubtitle').textContent = `#${trxCode} • ${now.toLocaleTimeString('id-ID')}`;
+
+  // Re-enable button
+  $('checkBtn'+s).disabled = false;
+  $('checkBtn'+s).textContent = 'Proses Pembayaran →';
+
+  closeMobileCart();
+  $('successModal').classList.add('show');
+}
+
+/* ── UNDO ── */
+async function undoTransaction(id) {
+  const idx = trxHistory.findIndex(t => t.id === (id || lastTrxId));
+  if (idx < 0) return notify('⚠️ Tidak ada transaksi untuk di-undo', true);
+  const snap = trxHistory[idx];
+  trxHistory.splice(idx, 1);
+
+  // Delete from Supabase if we have a dbId
+  if (sbClient && snap.dbId) {
+    try {
+      const { error } = await sbClient.from('transactions').delete().eq('id', snap.dbId);
+      if (error) throw error;
+      console.log('✅ Transaksi dihapus dari DB:', snap.dbId);
+    } catch(e) {
+      console.error('Delete transaction error:', e);
+      notify('⚠️ Undo lokal berhasil tapi gagal hapus dari DB', true);
+    }
+  }
+
+  dailyTotal -= snap.total; dailyTrx--;
+  if (dailyTotal < 0) dailyTotal = 0;
+  if (dailyTrx < 0)  dailyTrx  = 0;
+  $('totalTrx').textContent   = dailyTrx;
+  $('totalOmset').textContent = fRpShort(dailyTotal);
+  $('btnUndoStat').style.display = trxHistory.length > 0 ? 'block' : 'none';
+  saveDailyStats();
+  cart = snap.cart; renderCart(); updateSummary(); genQuickCash();
+  $('successModal').classList.remove('show');
+  lastTrxId = trxHistory.length ? trxHistory[trxHistory.length-1].id : null;
+  notify('↩️ Transaksi #' + snap.trxCode + ' dibatalkan & keranjang dikembalikan');
+}
+
+/* ── ADD PRODUCT MODAL ── */
+function openAddModal(productId) {
+  editId=null; imgFile=null; imgDataUrl=null;
+  $('pName').value=''; $('pCategory').value='makanan';
+  $('pPrice').value=''; $('pStock').value=''; $('pDesc').value='';
+  $('uploadProgress').classList.remove('show');
+  resetImgPreview();
+  if (productId) {
+    const p=products.find(x=>String(x.id)===String(productId));
+    if (p) {
+      editId=p.id;
+      $('addProductTitle').textContent='✏️ Edit Produk';
+      $('submitBtnText').textContent='Perbarui Produk';
+      $('pName').value=p.name; $('pCategory').value=p.category;
+      $('pPrice').value=p.price; $('pStock').value=p.stock;
+      $('pDesc').value=p.description||'';
+      if (p.image_url) setImgPreview(p.image_url);
+    }
+  } else {
+    $('addProductTitle').textContent='➕ Tambah Produk';
+    $('submitBtnText').textContent='Simpan Produk';
+  }
+  $('addProductModal').classList.add('show');
+}
+function closeAddModal() {
+  $('addProductModal').classList.remove('show');
+  $('uploadProgress').classList.remove('show');
+  editId=imgFile=imgDataUrl=null;
+}
+function resetImgPreview() {
+  const wrap=$('imgUploadWrap');
+  wrap.querySelectorAll('img.preview').forEach(el=>el.remove());
+  $('uploadPlaceholder').style.display='flex';
+  wrap.classList.remove('filled');
+  $('imgFileInput').value='';
+}
+function setImgPreview(src) {
+  const wrap=$('imgUploadWrap');
+  let img=wrap.querySelector('img.preview');
+  if (!img) { img=document.createElement('img'); img.className='preview'; wrap.insertBefore(img,wrap.firstChild); }
+  img.src=src;
+  img.onerror=()=>{ img.remove(); $('uploadPlaceholder').style.display='flex'; wrap.classList.remove('filled'); };
+  $('uploadPlaceholder').style.display='none';
+  wrap.classList.add('filled');
+}
+
+/* ── DELETE ── */
+let deleteId=null;
+function openDeleteModal(id) {
+  const p=products.find(x=>String(x.id)===String(id));
+  if (!p) return;
+  deleteId=id; $('deleteProductName').textContent=p.name;
+  $('deleteModal').classList.add('show');
+}
+async function confirmDelete() {
+  if (!deleteId) return;
+  $('btnConfirmDelete').disabled=true; $('btnConfirmDelete').textContent='Menghapus...';
+  if (sbClient) {
+    try {
+      const { error }=await sbClient.from('products').delete().eq('id',deleteId);
+      if (error) throw error;
+    } catch(e) { notify('❌ Gagal hapus: '+e.message,true); $('btnConfirmDelete').disabled=false; $('btnConfirmDelete').textContent='Hapus'; return; }
+  } else {
+    localProducts=localProducts.filter(p=>String(p.id)!==String(deleteId));
+  }
+  cart=cart.filter(c=>String(c.id)!==String(deleteId)); renderCart();
+  $('deleteModal').classList.remove('show'); $('btnConfirmDelete').disabled=false; $('btnConfirmDelete').textContent='Hapus';
+  deleteId=null; notify('🗑️ Produk dihapus'); await loadProducts();
+}
+
+/* ── MOBILE ── */
+function openMobileCart()  { $('cartOverlay').classList.add('show'); $('cartPanelMobile').classList.add('show'); }
+function closeMobileCart() { $('cartOverlay').classList.remove('show'); $('cartPanelMobile').classList.remove('show'); }
+
+/* ── UTILS ── */
+function $(id) { return document.getElementById(id); }
+function notify(msg,isErr=false) {
+  const el=$('notif'); $('notifText').textContent=msg;
+  el.classList.toggle('err',isErr); el.classList.remove('warn');
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),3000);
+}
+function fRp(n)      { return 'Rp '+Number(n).toLocaleString('id-ID'); }
+function fRpShort(n) {
+  if (n>=1000000) return 'Rp '+(n/1000000).toFixed(1)+'jt';
+  if (n>=1000)    return 'Rp '+(n/1000).toFixed(0)+'rb';
+  return 'Rp '+n;
+}
+
+/* ── EVENTS ── */
+document.addEventListener('click', e => {
+  const catEl=e.target.closest('[data-cat]'); if (catEl){ setCategory(catEl.dataset.cat); return; }
+  const editBtn=e.target.closest('[data-edit]'); if (editBtn){ e.stopPropagation(); openAddModal(editBtn.dataset.edit); return; }
+  const delBtn=e.target.closest('[data-del]');  if (delBtn) { e.stopPropagation(); openDeleteModal(delBtn.dataset.del); return; }
+  const addBtn=e.target.closest('[data-add]');  if (addBtn) { e.stopPropagation(); addToCart(addBtn.dataset.add); return; }
+  const card=e.target.closest('.product-card[data-id]'); if (card&&!e.target.closest('button')){ addToCart(card.dataset.id); return; }
+  const qBtn=e.target.closest('[data-qid]');    if (qBtn)   { changeQty(qBtn.dataset.qid,parseInt(qBtn.dataset.d)); return; }
+  const qcBtn=e.target.closest('[data-qcs]');   if (qcBtn)  { $('cash'+qcBtn.dataset.qcs).value=qcBtn.dataset.v; calcChange(qcBtn.dataset.qcs); return; }
+  const payBtn=e.target.closest('.pay-btn[data-type]');
+  if (payBtn) {
+    const s=payBtn.dataset.side, t=payBtn.dataset.type;
+    payType[s]=t;
+    $('payMethods'+s).querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('selected'));
+    payBtn.classList.add('selected');
+    $('cashSec'+s).style.display=t==='cash'?'flex':'none';
+    if (t!=='cash') $('checkBtn'+s).disabled=false; else calcChange(s);
+  }
+});
+
+
+
+$('btnCancelDelete').addEventListener('click',()=>{ $('deleteModal').classList.remove('show'); deleteId=null; });
+$('btnConfirmDelete').addEventListener('click',confirmDelete);
+$('deleteModal').addEventListener('click',e=>{ if (e.target===$('deleteModal')){ $('deleteModal').classList.remove('show'); deleteId=null; } });
+
+$('btnSidebarAdd').addEventListener('click',()=>openAddModal());
+$('btnToolbarAdd').addEventListener('click',()=>openAddModal());
+$('btnCloseAdd').addEventListener('click',closeAddModal);
+$('btnSubmitProduct').addEventListener('click',saveProduct);
+$('btnClearD').addEventListener('click',clearCart);
+$('btnClearM').addEventListener('click',clearCart);
+$('btnApplyD').addEventListener('click',()=>{ updateSummary(); notify('🏷️ Diskon diterapkan'); });
+$('btnApplyM').addEventListener('click',()=>{ updateSummary(); notify('🏷️ Diskon diterapkan'); });
+$('discD').addEventListener('input',updateSummary);
+$('discM').addEventListener('input',updateSummary);
+$('cashD').addEventListener('input',()=>calcChange('D'));
+$('cashM').addEventListener('input',()=>calcChange('M'));
+$('checkBtnD').addEventListener('click',()=>processCheckout('D'));
+$('checkBtnM').addEventListener('click',()=>processCheckout('M'));
+$('btnPrint').addEventListener('click',()=>notify('🖨️ Mencetak struk...'));
+$('btnUndoTrx').addEventListener('click',()=>undoTransaction(lastTrxId));
+$('btnUndoStat').addEventListener('click',()=>{ if (!trxHistory.length) return notify('⚠️ Tidak ada riwayat',true); undoTransaction(trxHistory[trxHistory.length-1].id); });
+$('btnNewTrx').addEventListener('click',()=>{ $('successModal').classList.remove('show'); clearCart(); notify('✅ Siap transaksi baru!'); });
+$('btnMobileCart').addEventListener('click',openMobileCart);
+$('cartOverlay').addEventListener('click',closeMobileCart);
+$('bnavMenu').addEventListener('click',()=>{ document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active')); $('bnavMenu').classList.add('active'); $('mobileSearchWrap').style.display='none'; });
+$('bnavSearch').addEventListener('click',()=>{ document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active')); $('bnavSearch').classList.add('active'); $('mobileSearchWrap').style.display='block'; $('searchM').focus(); });
+$('bnavAdd').addEventListener('click',()=>openAddModal());
+$('bnavCart').addEventListener('click',openMobileCart);
+$('btnViewGrid').addEventListener('click',()=>{ [$('btnViewGrid'),$('btnViewList')].forEach(b=>b.classList.remove('active')); $('btnViewGrid').classList.add('active'); $('productsGrid').style.gridTemplateColumns='repeat(auto-fill,minmax(150px,1fr))'; });
+$('btnViewList').addEventListener('click',()=>{ [$('btnViewGrid'),$('btnViewList')].forEach(b=>b.classList.remove('active')); $('btnViewList').classList.add('active'); $('productsGrid').style.gridTemplateColumns='1fr'; });
+$('searchD').addEventListener('input',filterProducts);
+$('searchM').addEventListener('input',filterProducts);
+
+$('imgUploadWrap').addEventListener('click',()=>$('imgFileInput').click());
+$('imgFileInput').addEventListener('change',e=>{
+  const file=e.target.files[0]; if (!file) return;
+  if (file.size>5*1024*1024) return notify('⚠️ Ukuran max 5MB',true);
+  imgFile=file;
+  const reader=new FileReader();
+  reader.onload=ev=>{ imgDataUrl=ev.target.result; setImgPreview(ev.target.result); };
+  reader.readAsDataURL(file);
+});
+
+$('addProductModal').addEventListener('click',e=>{ if (e.target===$('addProductModal')) closeAddModal(); });
+
+$('successModal').addEventListener('click',   e=>{ if (e.target===$('successModal'))    { $('successModal').classList.remove('show'); clearCart(); } });
+
+let sy=0;
+$('cartPanelMobile').addEventListener('touchstart',e=>{ sy=e.touches[0].clientY; });
+$('cartPanelMobile').addEventListener('touchmove', e=>{ if (e.touches[0].clientY-sy>80) closeMobileCart(); });
+
+setInterval(()=>$('clock').textContent=new Date().toLocaleTimeString('id-ID'),1000);
+$('clock').textContent=new Date().toLocaleTimeString('id-ID');
+
+
+/* ── TRANSACTIONS PAGE ── */
+let trxFilter = 'today';
+const payIcons = { cash:'💵', debit:'💳', qris:'📱' };
+
+function showTrxPage() {
+  document.querySelector('.main').style.display = 'none';
+  $('trxPage').classList.add('show');
+  $('btnShowTrx').classList.add('active');
+  loadTransactions();
+}
+function hideTrxPage() {
+  document.querySelector('.main').style.display = '';
+  $('trxPage').classList.remove('show');
+  $('btnShowTrx').classList.remove('active');
+  // reset bottom nav
+  document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
+  $('bnavMenu').classList.add('active');
+}
+
+function getDateRange(filter) {
+  const now = new Date();
+  const pad  = n => String(n).padStart(2,'0');
+  const today = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  if (filter === 'today') {
+    return { from: today + 'T00:00:00', to: today + 'T23:59:59' };
+  }
+  if (filter === 'week') {
+    const d = new Date(now); d.setDate(d.getDate()-6);
+    const from = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T00:00:00`;
+    return { from, to: today + 'T23:59:59' };
+  }
+  if (filter === 'month') {
+    const from = `${now.getFullYear()}-${pad(now.getMonth()+1)}-01T00:00:00`;
+    return { from, to: today + 'T23:59:59' };
+  }
+  return null; // all
+}
+
+async function loadTransactions() {
+  const list = $('trxList');
+  list.innerHTML = '<div class="trx-loading"><div class="trx-loading-spinner"></div><span>Memuat transaksi...</span></div>';
+
+  if (!sbClient) {
+    list.innerHTML = '<div class="trx-empty"><div class="trx-empty-icon">📋</div><p>Supabase belum terhubung</p></div>';
+    return;
+  }
+
+  try {
+    let query = sbClient.from('transactions').select('*').order('created_at', { ascending: false });
+    const range = getDateRange(trxFilter);
+    if (range) {
+      query = query.gte('created_at', range.from).lte('created_at', range.to);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    renderTransactions(data || []);
+  } catch(e) {
+    console.error('Load transactions error:', JSON.stringify(e), e.message, e.code);
+    const emsg = e.message || e.code || JSON.stringify(e);
+    list.innerHTML = `<div class="trx-empty"><div class="trx-empty-icon">⚠️</div><p style="color:var(--red);font-size:12px;text-align:center;padding:0 20px">${emsg}</p></div>`;
+  }
+}
+
+function renderTransactions(data) {
+  // Summary
+  const count     = data.length;
+  const sumTotal  = data.reduce((a,t) => a + (t.total||0), 0);
+  const avg       = count ? Math.round(sumTotal/count) : 0;
+  const itemsSold = data.reduce((a,t) => {
+    const items = Array.isArray(t.items) ? t.items : [];
+    return a + items.reduce((b,i) => b + (i.qty||0), 0);
+  }, 0);
+
+  $('trxSumCount').textContent  = count;
+  $('trxSumTotal').textContent  = fRp(sumTotal);
+  $('trxSumAvg').textContent    = count ? fRp(avg) : '—';
+  $('trxSumItems').textContent  = itemsSold + ' item';
+
+  const list = $('trxList');
+  if (!data.length) {
+    list.innerHTML = '<div class="trx-empty"><div class="trx-empty-icon">📋</div><p>Belum ada transaksi di periode ini</p></div>';
+    return;
+  }
+
+  list.innerHTML = data.map(t => {
+    const items   = Array.isArray(t.items) ? t.items : [];
+    const date    = new Date(t.created_at);
+    const timeStr = date.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + date.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+    const method  = t.payment_method || 'cash';
+    const icon    = payIcons[method] || '💵';
+    const methodLabel = method === 'cash' ? 'Tunai' : method === 'debit' ? 'Debit/CC' : 'QRIS';
+    const itemCount = items.reduce((a,i) => a+(i.qty||0), 0);
+
+    const itemRows = items.map(i =>
+      `<div class="trx-item-row"><span>${i.name} x${i.qty}</span><span>${fRp(i.price*i.qty)}</span></div>`
+    ).join('');
+
+    const discRow = (t.discount_pct > 0)
+      ? `<div class="trx-disc-row"><span>Diskon ${t.discount_pct}%</span><span>-${fRp(t.discount_amt||0)}</span></div>` : '';
+
+    const changeRow = (method === 'cash' && t.change_amount > 0)
+      ? `<div class="trx-item-row" style="color:var(--text3)"><span>Kembalian</span><span>${fRp(t.change_amount)}</span></div>` : '';
+
+    return `<div class="trx-card" data-trxid="${t.id}">
+      <div class="trx-card-header">
+        <div class="trx-card-left">
+          <div class="trx-badge">#${t.trx_number||t.id.slice(0,8)}</div>
+          <div class="trx-card-meta">
+            <div class="trx-card-time">${timeStr}</div>
+            <div class="trx-card-method"><span class="pay-method-icon">${icon}</span>${methodLabel}</div>
+          </div>
+        </div>
+        <div class="trx-card-right" style="display:flex;align-items:center;gap:8px">
+          <div>
+            <div class="trx-card-total">${fRp(t.total||0)}</div>
+            <div class="trx-card-items-count">${itemCount} item • ketuk detail</div>
+          </div>
+          <button class="btn-del-trx" data-deltrx="${t.id}" title="Hapus transaksi">🗑</button>
+        </div>
+      </div>
+      <div class="trx-card-items">
+        ${itemRows}
+        ${discRow}
+        <div class="trx-total-row"><span>Total</span><span>${fRp(t.total||0)}</span></div>
+        ${changeRow}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Toggle expand on click (but not delete button)
+  list.querySelectorAll('.trx-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.closest('.btn-del-trx')) return;
+      card.classList.toggle('expanded');
+    });
+  });
+
+  // Delete button
+  list.querySelectorAll('.btn-del-trx').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      confirmDeleteTrx(btn.dataset.deltrx);
+    });
+  });
+}
+
+
+/* ── DELETE TRANSACTION ── */
+async function confirmDeleteTrx(dbId) {
+  if (!confirm('Hapus transaksi ini dari riwayat?')) return;
+  if (!sbClient) return notify('❌ Supabase belum terhubung', true);
+
+  try {
+    const { error } = await sbClient.from('transactions').delete().eq('id', dbId);
+    if (error) throw error;
+    notify('🗑️ Transaksi dihapus');
+    loadTransactions(); // reload list
+  } catch(e) {
+    console.error('Delete trx error:', e);
+    notify('❌ Gagal hapus: ' + (e.message || e.code), true);
+  }
+}
+
+// Filter buttons
+document.addEventListener('click', e => {
+  const fb = e.target.closest('[data-filter]');
+  if (fb) {
+    trxFilter = fb.dataset.filter;
+    document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+    fb.classList.add('active');
+    loadTransactions();
+  }
+});
+
+$('btnShowTrx').addEventListener('click', showTrxPage);
+$('btnBackKasir').addEventListener('click', hideTrxPage);
+$('btnReloadTrx').addEventListener('click', loadTransactions);
+$('bnavTrx').addEventListener('click', () => {
+  document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
+  $('bnavTrx').classList.add('active');
+  showTrxPage();
+});
+
+/* ── INIT ── */
+renderCart();
+loadSBConfig();
+renderCats();
+loadProducts();
+loadDailyStats();
+
+})();
+</script>
+</body>
+</html>
